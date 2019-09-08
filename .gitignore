@@ -1,2 +1,7 @@
 .idea
 .envrc
+
+*~
+*.o
+tmp*
+a.out
