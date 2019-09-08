@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    fprintf(stderr, "incorrect number of arguments\n");
+    fprintf(stderr, "[ERROR] incorrect number of arguments\n");
     return 1;
   }
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    fprintf(stderr, "unexpected character: '%c'\n", *p);
+    fprintf(stderr, "[ERROR] unexpected character: '%c'\n", *p);
     return 1;
   }
 
