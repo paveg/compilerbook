@@ -5,28 +5,44 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Kind of token
+// Kind of token.
 typedef enum {
-  TK_RESERVED, // Token
-  TK_NUM, // Integer token
-  TK_EOF, // End of file token
+  TK_RESERVED, // Token.
+  TK_NUM, // Integer token.
+  TK_EOF, // End of file token.
 } TokenKind;
 
 typedef struct Token Token;
 
-// Token types
+// Token types.
 struct Token {
-  TokenKind kind; // Kind of token
-  Token *next; // Next input token
-  int val; // If kind is TK_NUM, that number
-  char *str; // Token string
+  TokenKind kind; // Kind of token.
+  Token *next; // Next input token.
+  int val; // If kind is TK_NUM, that number.
+  char *str; // Token string.
 };
 
-// Currently focused tokens
+// Currently focused tokens.
 Token *token;
 
-// Functions for reporting errors
-// Takes the same arguments as printf
+// Input program.
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, ""); // pos number of output a blank.
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
+// Functions for reporting errors.
+// Takes the same arguments as printf.
 void error(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -48,7 +64,7 @@ bool consume(char op) {
 // Otherwise it reports error.
 void expect(char op) {
   if (token->kind != TK_RESERVED || token->str[0] != op)
-    error("[ERROR] Not '%c'", op);
+    error_at(token->str, "[ERROR] expected '%c'", op);
    token = token->next;
 }
 
@@ -56,18 +72,18 @@ void expect(char op) {
 // Otherwise it reports error.
 int expect_number() {
   if (token->kind != TK_NUM)
-    error("[ERROR] Not a number");
+    error_at(token->str, "[ERROR] expected a number");
   int val = token->val;
   token = token->next;
   return val;
 }
 
-// Returns true if end of input, false otherwise
+// Returns true if end of input, false otherwise.
 bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-// Create a new token and connect it to cur
+// Create a new token and connect it to cur.
 Token *new_token(TokenKind kind, Token *cur, char *str) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
@@ -76,14 +92,15 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
   return tok;
 }
 
-// Tokenize the input string p and return it
-Token *tokenize(char *p) {
+// Tokenize the input string `user_input` and return it.
+Token *tokenize() {
+  char *p = user_input;
   Token head;
   head.next = NULL;
   Token *cur = &head;
 
   while (*p) {
-    // Skip whitespace
+    // Skip whitespace.
     if (isspace(*p)) {
       p++;
       continue;
@@ -100,7 +117,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    error("Tokenize is not possible");
+    error_at(p, "expected a number");
   }
 
   new_token(TK_EOF, cur, p);
@@ -114,18 +131,19 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  token = tokenize(argv[1]);
+  user_input = argv[1];
+  token = tokenize();
 
-  //  Output the first part of the assembly
+  // Output the first part of the assembly.
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
 
   // The first of the expression must be a number,
-  // so check it and output the first mov instruction
+  // so check it and output the first mov instruction.
   printf("  mov rax, %d\n", expect_number());
 
-  // Output assembly while consuming token sequence `+ <number>` or `- <number>`
+  // Output assembly while consuming token sequence `+ <number>` or `- <number>`.
   while (!at_eof()) {
     if (consume('+')) {
       printf("  add rax, %d\n", expect_number());
